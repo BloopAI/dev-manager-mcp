@@ -171,6 +171,8 @@ impl Manager {
             cmd.current_dir(path);
         }
 
+        cmd.env("PORT", port.to_string());
+
         let child = match cmd.spawn() {
             Ok(c) => c,
             Err(e) => {
@@ -181,7 +183,7 @@ impl Manager {
         };
 
         let entry = ServerEntry::new(child, port);
-        
+
         {
             let mut guard = match self.inner.lock() {
                 Ok(g) => g,
@@ -216,15 +218,15 @@ impl Manager {
         match entry.stop().await {
             Ok(_) => {
                 entry.port = 0;
-                
+
                 let mut guard = match self.inner.lock() {
                     Ok(g) => g,
                     Err(e) => return json!({"error": format!("Lock error: {}", e)}),
                 };
-                
+
                 guard.port_allocator.free(port);
                 guard.servers.insert(session_key.clone(), entry);
-                
+
                 json!({"status": "stopped", "session_key": session_key})
             }
             Err(e) => json!({"error": format!("Failed to stop server: {}", e)}),
@@ -253,17 +255,21 @@ impl Manager {
             }
         }
 
-        let sessions: Vec<_> = guard.servers.iter_mut().map(|(key, entry)| {
-            entry.last_activity = Instant::now();
-            let mut result = json!({
-                "session_key": key,
-                "running": entry.is_running()
-            });
-            if entry.port != 0 {
-                result["port"] = json!(entry.port);
-            }
-            result
-        }).collect();
+        let sessions: Vec<_> = guard
+            .servers
+            .iter_mut()
+            .map(|(key, entry)| {
+                entry.last_activity = Instant::now();
+                let mut result = json!({
+                    "session_key": key,
+                    "running": entry.is_running()
+                });
+                if entry.port != 0 {
+                    result["port"] = json!(entry.port);
+                }
+                result
+            })
+            .collect();
 
         json!({"sessions": sessions})
     }
