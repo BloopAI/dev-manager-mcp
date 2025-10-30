@@ -4,8 +4,8 @@ A daemon process that runs continuously and accepts multiple concurrent MCP clie
 
 ## Features
 
-- **Multi-client daemon** with HTTP/SSE transport on port 3009
-- **Shared global state** across all concurrent connections
+- **Multi-client daemon** with shared global state
+- **STDIO and SSE transport** support
 - **Automatic port allocation** starting at 3010 with reuse
 - **Log capture** with 512KB ring buffers per server
 - **Auto-cleanup** of idle sessions after 60 seconds
@@ -35,6 +35,37 @@ The daemon will listen on `http://127.0.0.1:3009`.
 
 ### Client Configuration
 
+#### STDIO Transport (Recommended)
+
+For Claude Desktop (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "dev-manager": {
+      "command": "mcp-dev-manager-stdio"
+    }
+  }
+}
+```
+
+The STDIO proxy connects to the daemon at `http://127.0.0.1:3009/sse` by default. To use a different URL, set the `MCP_DAEMON_URL` environment variable:
+
+```json
+{
+  "mcpServers": {
+    "dev-manager": {
+      "command": "mcp-dev-manager-stdio",
+      "env": {
+        "MCP_DAEMON_URL": "http://127.0.0.1:3009/sse"
+      }
+    }
+  }
+}
+```
+
+#### SSE Transport (Legacy)
+
 For Claude Desktop (`claude_desktop_config.json`):
 
 ```json
@@ -47,7 +78,7 @@ For Claude Desktop (`claude_desktop_config.json`):
 }
 ```
 
-Multiple clients can use the same URL and will share session state.
+Multiple clients can use the same configuration and will share session state.
 
 ## MCP Tools
 
@@ -56,6 +87,7 @@ Start a development server. Auto-generates a unique 4-character session key.
 
 **Parameters:**
 - `command` (string): Shell command to execute (e.g., "npm run dev", "python -m http.server 8080")
+- `cwd` (optional string): Working directory for the command. When using STDIO transport, defaults to client's working directory.
 
 **Returns:**
 ```json

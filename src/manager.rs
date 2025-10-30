@@ -127,7 +127,7 @@ impl Manager {
         });
     }
 
-    pub async fn start(&self, command: String) -> serde_json::Value {
+    pub async fn start(&self, command: String, cwd: Option<String>) -> serde_json::Value {
         let (session_key, port) = {
             let mut guard = match self.inner.lock() {
                 Ok(g) => g,
@@ -160,6 +160,16 @@ impl Manager {
         };
         cmd.stdout(std::process::Stdio::piped());
         cmd.stderr(std::process::Stdio::piped());
+
+        if let Some(ref cwd_path) = cwd {
+            let path = std::path::Path::new(cwd_path);
+            if !path.is_dir() {
+                let mut guard = self.inner.lock().unwrap();
+                guard.port_allocator.free(port);
+                return json!({"error": format!("Invalid cwd: {}", cwd_path)});
+            }
+            cmd.current_dir(path);
+        }
 
         let child = match cmd.spawn() {
             Ok(c) => c,

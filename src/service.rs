@@ -14,6 +14,7 @@ use std::sync::Arc;
 #[derive(Deserialize, JsonSchema, Clone)]
 struct StartRequest {
     command: String,
+    cwd: Option<String>,
 }
 
 #[derive(Deserialize, JsonSchema, Clone)]
@@ -50,7 +51,7 @@ impl DevManagerService {
 impl DevManagerService {
     #[tool(description = "Start a development server. Returns auto-generated session key, port number and status.")]
     async fn start(&self, Parameters(req): Parameters<StartRequest>) -> Result<CallToolResult, ErrorData> {
-        let result = self.manager.start(req.command).await;
+        let result = self.manager.start(req.command, req.cwd).await;
         Ok(CallToolResult::success(vec![Content::text(result.to_string())]))
     }
 

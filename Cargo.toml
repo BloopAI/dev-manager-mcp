@@ -3,8 +3,16 @@ name = "mcp-dev-manager"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "mcp-dev-manager"
+path = "src/main.rs"
+
+[[bin]]
+name = "mcp-dev-manager-stdio"
+path = "src/bin/stdio_proxy.rs"
+
 [dependencies]
-rmcp = { version = "0.8", features = ["server", "transport-sse-server"] }
+rmcp = { version = "0.8", features = ["server", "client", "transport-sse-server", "transport-sse-client-reqwest", "transport-io"] }
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
