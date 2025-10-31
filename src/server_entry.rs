@@ -84,12 +84,35 @@ impl ServerEntry {
 
     pub async fn stop(&mut self) -> anyhow::Result<()> {
         if let ProcessState::Running(child) = &mut self.state {
-            child.kill().await?;
-            
-            match timeout(Duration::from_secs(5), child.wait()).await {
-                Ok(Ok(_)) => {},
-                Ok(Err(e)) => return Err(e.into()),
-                Err(_) => anyhow::bail!("Timeout waiting for process to exit"),
+            #[cfg(unix)]
+            {
+                if let Some(pid) = child.id() {
+                    let pgid = -(pid as i32);
+                    unsafe {
+                        libc::kill(pgid, libc::SIGTERM);
+                    }
+                }
+
+                if timeout(Duration::from_secs(5), child.wait()).await.is_err() {
+                    if let Some(pid) = child.id() {
+                        let pgid = -(pid as i32);
+                        unsafe {
+                            libc::kill(pgid, libc::SIGKILL);
+                        }
+                    }
+                    let _ = timeout(Duration::from_secs(2), child.wait()).await;
+                }
+            }
+
+            #[cfg(windows)]
+            {
+                if let Some(pid) = child.id() {
+                    let _ = tokio::process::Command::new("taskkill")
+                        .args(["/PID", &pid.to_string(), "/T", "/F"])
+                        .status()
+                        .await;
+                }
+                let _ = timeout(Duration::from_secs(5), child.wait()).await;
             }
 
             self.state = ProcessState::Exited {

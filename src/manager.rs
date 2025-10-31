@@ -154,9 +154,28 @@ impl Manager {
             c.arg("/C").arg(&command);
             c
         } else {
-            let mut c = Command::new("sh");
-            c.arg("-c").arg(&command);
-            c
+            #[cfg(unix)]
+            {
+                let mut c = Command::new("sh");
+                c.arg("-c").arg(&command);
+                unsafe {
+                    #[allow(unused_imports)]
+                    use std::os::unix::process::CommandExt;
+                    c.pre_exec(|| {
+                        if libc::setsid() == -1 {
+                            return Err(std::io::Error::last_os_error());
+                        }
+                        Ok(())
+                    });
+                }
+                c
+            }
+            #[cfg(not(unix))]
+            {
+                let mut c = Command::new("sh");
+                c.arg("-c").arg(&command);
+                c
+            }
         };
         cmd.stdout(std::process::Stdio::piped());
         cmd.stderr(std::process::Stdio::piped());
