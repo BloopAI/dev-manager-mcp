@@ -56,7 +56,7 @@ function getPlatformDir() {
 }
 
 function getBinaryName() {
-  return platform === "win32" ? "mcp-dev-manager.exe" : "mcp-dev-manager";
+  return platform === "win32" ? "dev-manager-mcp.exe" : "dev-manager-mcp";
 }
 
 const platformDir = getPlatformDir();
@@ -67,7 +67,7 @@ fs.mkdirSync(extractDir, { recursive: true });
 function extractAndRun() {
   const binName = getBinaryName();
   const binPath = path.join(extractDir, binName);
-  const zipName = "mcp-dev-manager.zip";
+  const zipName = "dev-manager-mcp.zip";
   const zipPath = path.join(extractDir, zipName);
 
   if (fs.existsSync(binPath)) fs.unlinkSync(binPath);
@@ -82,8 +82,8 @@ function extractAndRun() {
     const zip = new AdmZip(zipPath);
     zip.extractAllTo(extractDir, true);
   } catch (err) {
-    console.error("❌ Failed to extract mcp-dev-manager archive:", err.message);
-    if (process.env.MCP_DEV_MANAGER_DEBUG) {
+    console.error("❌ Failed to extract dev-manager-mcp archive:", err.message);
+    if (process.env.DEV_MANAGER_MCP_DEBUG) {
       console.error(err.stack);
     }
     process.exit(1);
@@ -101,14 +101,14 @@ function extractAndRun() {
     } catch { }
   }
 
-  console.log(`🚀 Launching mcp-dev-manager...`);
+  console.log(`🚀 Launching dev-manager-mcp...`);
   
   const args = process.argv.slice(2);
   const proc = spawn(binPath, args, { stdio: "inherit" });
   
   proc.on("exit", (code) => process.exit(code || 0));
   proc.on("error", (err) => {
-    console.error("❌ Failed to start mcp-dev-manager:", err.message);
+    console.error("❌ Failed to start dev-manager-mcp:", err.message);
     process.exit(1);
   });
 

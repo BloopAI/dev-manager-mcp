@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(name = "mcp-dev-manager")]
+#[command(name = "dev-manager-mcp")]
 #[command(about = "MCP development server manager with shared session state")]
 struct Cli {
     #[command(subcommand)]
@@ -31,7 +31,7 @@ async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     match cli.command.unwrap_or(Command::Daemon { port: 3009 }) {
-        Command::Daemon { port } => mcp_dev_manager::run_daemon(port).await,
-        Command::Stdio { daemon_url } => mcp_dev_manager::run_stdio_proxy(&daemon_url).await,
+        Command::Daemon { port } => dev_manager_mcp::run_daemon(port).await,
+        Command::Stdio { daemon_url } => dev_manager_mcp::run_stdio_proxy(&daemon_url).await,
     }
 }

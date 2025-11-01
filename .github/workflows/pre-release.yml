@@ -66,7 +66,7 @@ jobs:
       - name: Determine and update versions
         id: version
         run: |
-          latest_npm_version=$(npm view mcp-dev-manager version 2>/dev/null || echo "0.0.0")
+          latest_npm_version=$(npm view dev-manager-mcp version 2>/dev/null || echo "0.0.0")
           echo "Latest npm version: $latest_npm_version"
 
           timestamp=$(date +%Y%m%d%H%M%S)
@@ -168,9 +168,9 @@ jobs:
         run: |
           mkdir -p dist
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            cp target/${{ matrix.target }}/release/mcp-dev-manager.exe dist/mcp-dev-manager-${{ matrix.name }}.exe
+            cp target/${{ matrix.target }}/release/dev-manager-mcp.exe dist/dev-manager-mcp-${{ matrix.name }}.exe
           else
-            cp target/${{ matrix.target }}/release/mcp-dev-manager dist/mcp-dev-manager-${{ matrix.name }}
+            cp target/${{ matrix.target }}/release/dev-manager-mcp dist/dev-manager-mcp-${{ matrix.name }}
           fi
 
       - name: Prepare Apple certificate (macOS)
@@ -182,8 +182,8 @@ jobs:
         if: runner.os == 'macOS'
         uses: indygreg/apple-code-sign-action@v1
         with:
-          input_path: target/${{ matrix.target }}/release/mcp-dev-manager
-          output_path: mcp-dev-manager
+          input_path: target/${{ matrix.target }}/release/dev-manager-mcp
+          output_path: dev-manager-mcp
           p12_file: certificate.p12
           p12_password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           sign: true
@@ -191,13 +191,13 @@ jobs:
 
       - name: Package binary (macOS)
         if: runner.os == 'macOS'
-        run: zip mcp-dev-manager.zip mcp-dev-manager
+        run: zip dev-manager-mcp.zip dev-manager-mcp
 
       - name: Prepare signed binaries (macOS)
         if: runner.os == 'macOS'
         run: |
           mkdir -p dist
-          cp mcp-dev-manager.zip dist/mcp-dev-manager-${{ matrix.name }}.zip
+          cp dev-manager-mcp.zip dist/dev-manager-mcp-${{ matrix.name }}.zip
 
       - name: Clean up certificates (macOS)
         if: runner.os == 'macOS'
@@ -218,22 +218,22 @@ jobs:
         include:
           - target: x86_64-unknown-linux-musl
             name: linux-x64
-            binary: mcp-dev-manager
+            binary: dev-manager-mcp
           - target: x86_64-pc-windows-msvc
             name: windows-x64
-            binary: mcp-dev-manager.exe
+            binary: dev-manager-mcp.exe
           - target: x86_64-apple-darwin
             name: macos-x64
-            binary: mcp-dev-manager
+            binary: dev-manager-mcp
           - target: aarch64-apple-darwin
             name: macos-arm64
-            binary: mcp-dev-manager
+            binary: dev-manager-mcp
           - target: aarch64-pc-windows-msvc
             name: windows-arm64
-            binary: mcp-dev-manager.exe
+            binary: dev-manager-mcp.exe
           - target: aarch64-unknown-linux-musl
             name: linux-arm64
-            binary: mcp-dev-manager
+            binary: dev-manager-mcp
     steps:
       - uses: actions/checkout@v4
         with:
@@ -249,17 +249,17 @@ jobs:
         if: matrix.name != 'macos-arm64' && matrix.name != 'macos-x64'
         run: |
           mkdir -p npx-cli/dist/${{ matrix.name }}
-          mkdir mcp-dev-manager-${{ matrix.name }}
+          mkdir dev-manager-mcp-${{ matrix.name }}
           
-          cp dist/mcp-dev-manager-${{ matrix.name }}* mcp-dev-manager-${{ matrix.name }}/${{ matrix.binary }}
+          cp dist/dev-manager-mcp-${{ matrix.name }}* dev-manager-mcp-${{ matrix.name }}/${{ matrix.binary }}
           
-          zip -j npx-cli/dist/${{ matrix.name }}/mcp-dev-manager.zip mcp-dev-manager-${{ matrix.name }}/${{ matrix.binary }}
+          zip -j npx-cli/dist/${{ matrix.name }}/dev-manager-mcp.zip dev-manager-mcp-${{ matrix.name }}/${{ matrix.binary }}
 
       - name: Create platform package (macOS)
         if: matrix.name == 'macos-arm64' || matrix.name == 'macos-x64'
         run: |
           mkdir -p npx-cli/dist/${{ matrix.name }}
-          cp dist/mcp-dev-manager-${{ matrix.name }}* npx-cli/dist/${{ matrix.name }}/mcp-dev-manager.zip
+          cp dist/dev-manager-mcp-${{ matrix.name }}* npx-cli/dist/${{ matrix.name }}/dev-manager-mcp.zip
 
       - name: Upload platform package artifact
         uses: actions/upload-artifact@v4
@@ -301,4 +301,4 @@ jobs:
           prerelease: true
           generate_release_notes: true
           files: |
-            npx-cli/mcp-dev-manager-*.tgz
+            npx-cli/dev-manager-mcp-*.tgz

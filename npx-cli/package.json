@@ -1,10 +1,10 @@
 {
-  "name": "mcp-dev-manager",
+  "name": "dev-manager-mcp",
   "private": false,
   "version": "0.1.0",
   "main": "index.js",
   "bin": {
-    "mcp-dev-manager": "bin/cli.js"
+    "dev-manager-mcp": "bin/cli.js"
   },
   "keywords": [
     "mcp",

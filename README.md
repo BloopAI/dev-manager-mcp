@@ -17,7 +17,7 @@ A daemon process that runs continuously and accepts multiple concurrent MCP clie
 cargo build --release
 ```
 
-The binary will be at `target/release/mcp-dev-manager`.
+The binary will be at `target/release/dev-manager-mcp`.
 
 ## Running
 
@@ -25,17 +25,17 @@ The binary will be at `target/release/mcp-dev-manager`.
 
 ```bash
 # Foreground (default mode)
-./target/release/mcp-dev-manager
+./target/release/dev-manager-mcp
 # or explicitly:
-./target/release/mcp-dev-manager daemon
+./target/release/dev-manager-mcp daemon
 
 # Background
-./target/release/mcp-dev-manager daemon &
+./target/release/dev-manager-mcp daemon &
 
 # Custom port
-./target/release/mcp-dev-manager daemon --port 3010
+./target/release/dev-manager-mcp daemon --port 3010
 # or via environment variable:
-PORT=3010 ./target/release/mcp-dev-manager daemon
+PORT=3010 ./target/release/dev-manager-mcp daemon
 ```
 
 The daemon will listen on `http://127.0.0.1:3009` by default.
@@ -50,7 +50,7 @@ For Claude Desktop (`claude_desktop_config.json`):
 {
   "mcpServers": {
     "dev-manager": {
-      "command": "mcp-dev-manager",
+      "command": "dev-manager-mcp",
       "args": ["stdio"]
     }
   }
@@ -63,7 +63,7 @@ The STDIO proxy connects to the daemon at `http://127.0.0.1:3009/sse` by default
 {
   "mcpServers": {
     "dev-manager": {
-      "command": "mcp-dev-manager",
+      "command": "dev-manager-mcp",
       "args": ["stdio", "--daemon-url", "http://127.0.0.1:3010/sse"]
     }
   }
@@ -76,7 +76,7 @@ Or use the environment variable:
 {
   "mcpServers": {
     "dev-manager": {
-      "command": "mcp-dev-manager",
+      "command": "dev-manager-mcp",
       "args": ["stdio"],
       "env": {
         "MCP_DAEMON_URL": "http://127.0.0.1:3009/sse"
@@ -207,7 +207,7 @@ Get stdout/stderr logs for a development server session.
 
 ## Testing Multi-Client Behavior
 
-1. Start daemon: `./target/release/mcp-dev-manager`
+1. Start daemon: `./target/release/dev-manager-mcp`
 2. Connect Client A and start a server session
 3. Connect Client B and query status - should see Client A's session
 4. Client B can stop Client A's session
