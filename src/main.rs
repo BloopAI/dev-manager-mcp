@@ -1,35 +1,37 @@
-mod log_buffer;
-mod manager;
-mod port_allocator;
-mod server_entry;
-mod service;
+use clap::{Parser, Subcommand};
 
-use manager::Manager;
-use rmcp::transport::sse_server::SseServer;
-use service::DevManagerService;
-use std::net::{Ipv4Addr, SocketAddr};
-use std::sync::Arc;
+#[derive(Parser)]
+#[command(name = "mcp-dev-manager")]
+#[command(about = "MCP development server manager with shared session state")]
+struct Cli {
+    #[command(subcommand)]
+    command: Option<Command>,
+}
+
+#[derive(Subcommand)]
+enum Command {
+    #[command(about = "Run as HTTP/SSE daemon server (default)")]
+    Daemon {
+        #[arg(long, env = "PORT", default_value_t = 3009)]
+        port: u16,
+    },
+    #[command(about = "Run as STDIO proxy that connects to daemon")]
+    Stdio {
+        #[arg(
+            long,
+            env = "MCP_DAEMON_URL",
+            default_value = "http://127.0.0.1:3009/sse"
+        )]
+        daemon_url: String,
+    },
+}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let manager = Arc::new(Manager::new());
-    
-    let port = std::env::var("PORT")
-        .ok()
-        .and_then(|p| p.parse().ok())
-        .unwrap_or(3009);
-    
-    let bind = SocketAddr::from((Ipv4Addr::LOCALHOST, port));
+    let cli = Cli::parse();
 
-    println!("MCP daemon listening on {}", bind);
-    let server = SseServer::serve(bind).await?;
-
-    let cancel = server.with_service({
-        let manager = Arc::clone(&manager);
-        move || DevManagerService::new(Arc::clone(&manager))
-    });
-
-    tokio::signal::ctrl_c().await?;
-    cancel.cancel();
-    Ok(())
+    match cli.command.unwrap_or(Command::Daemon { port: 3009 }) {
+        Command::Daemon { port } => mcp_dev_manager::run_daemon(port).await,
+        Command::Stdio { daemon_url } => mcp_dev_manager::run_stdio_proxy(&daemon_url).await,
+    }
 }

@@ -24,14 +24,21 @@ The binary will be at `target/release/mcp-dev-manager`.
 ### Start the Daemon
 
 ```bash
-# Foreground
+# Foreground (default mode)
 ./target/release/mcp-dev-manager
+# or explicitly:
+./target/release/mcp-dev-manager daemon
 
 # Background
-./target/release/mcp-dev-manager &
+./target/release/mcp-dev-manager daemon &
+
+# Custom port
+./target/release/mcp-dev-manager daemon --port 3010
+# or via environment variable:
+PORT=3010 ./target/release/mcp-dev-manager daemon
 ```
 
-The daemon will listen on `http://127.0.0.1:3009`.
+The daemon will listen on `http://127.0.0.1:3009` by default.
 
 ### Client Configuration
 
@@ -43,19 +50,34 @@ For Claude Desktop (`claude_desktop_config.json`):
 {
   "mcpServers": {
     "dev-manager": {
-      "command": "mcp-dev-manager-stdio"
+      "command": "mcp-dev-manager",
+      "args": ["stdio"]
     }
   }
 }
 ```
 
-The STDIO proxy connects to the daemon at `http://127.0.0.1:3009/sse` by default. To use a different URL, set the `MCP_DAEMON_URL` environment variable:
+The STDIO proxy connects to the daemon at `http://127.0.0.1:3009/sse` by default. To use a different URL:
 
 ```json
 {
   "mcpServers": {
     "dev-manager": {
-      "command": "mcp-dev-manager-stdio",
+      "command": "mcp-dev-manager",
+      "args": ["stdio", "--daemon-url", "http://127.0.0.1:3010/sse"]
+    }
+  }
+}
+```
+
+Or use the environment variable:
+
+```json
+{
+  "mcpServers": {
+    "dev-manager": {
+      "command": "mcp-dev-manager",
+      "args": ["stdio"],
       "env": {
         "MCP_DAEMON_URL": "http://127.0.0.1:3009/sse"
       }
