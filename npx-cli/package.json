@@ -6,6 +6,11 @@
   "bin": {
     "dev-manager-mcp": "bin/cli.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BloopAI/dev-manager-mcp",
+    "directory": "npx-cli"
+  },
   "keywords": [
     "mcp",
     "dev-server",
