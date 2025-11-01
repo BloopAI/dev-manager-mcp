@@ -2,25 +2,23 @@
 
 MCP Dev Server Manager — manage development servers via npx.
 
-## Requirements
+## Installation & Usage
 
-Node.js >= 18
+**Requirements:** Node.js >= 18
 
-## Quick Start
+The recommended way to use dev-manager-mcp is via `npx`:
+
+### Quick Start
+
+Make sure the daemon is running in a terminal somewhere:
 
 ```bash
-# STDIO mode (recommended for MCP clients like Claude Desktop)
-npx -y dev-manager-mcp stdio
-
-# Start daemon (optional)
-npx -y dev-manager-mcp daemon
+npx -y dev-manager-mcp
 ```
 
-## Claude Desktop Configuration
+Add this MCP config to your coding CLI:
 
-Add to your `claude_desktop_config.json`:
-
-```json
+```bash
 {
   "mcpServers": {
     "dev-manager": {
@@ -31,34 +29,7 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 
-### Custom Daemon URL
-
-```json
-{
-  "mcpServers": {
-    "dev-manager": {
-      "command": "npx",
-      "args": ["dev-manager-mcp", "stdio", "--daemon-url", "http://127.0.0.1:3010/sse"]
-    }
-  }
-}
-```
-
-Or via environment variable:
-
-```json
-{
-  "mcpServers": {
-    "dev-manager": {
-      "command": "npx",
-      "args": ["dev-manager-mcp", "stdio"],
-      "env": {
-        "MCP_DAEMON_URL": "http://127.0.0.1:3009/sse"
-      }
-    }
-  }
-}
-```
+Finally, ask your coding CLI to start a dev server. You should see it use the MCP server.
 
 ## Options
 

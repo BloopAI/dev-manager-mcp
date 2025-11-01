@@ -1,15 +1,22 @@
 # MCP Dev Server Manager
 
-A daemon process that runs continuously and accepts multiple concurrent MCP client connections, sharing dev server session state across all clients.
+A daemon that accepts requests from MCP clients to start dev servers, allocating unique ports to avoid collisions and shutting down idle connections after 60s of inactivity.
+
+## Example
+
+- User starts daemon
+- User's first MCP client (eg coding CLI) requests to run a dev server
+  - Dev server is started on PORT 3010
+- User's second MCP client (eg coding CLI) requests to run a dev server
+  - Dev server is started on PORT 3011
 
 ## Features
 
-- **Multi-client daemon** with shared global state
-- **STDIO and SSE transport** support
+- **Run multiple dev servers in parallel**: useful if you want to use automated testing tools eg [Playwright](https://github.com/microsoft/playwright-mcp) or [Google Dev Tools MCP](https://developer.chrome.com/blog/chrome-devtools-mcp)
+- **Avoid port collisions**: when working with websites, it's often necessary to specify different ports if you want to run multiple dev servers
 - **Automatic port allocation** starting at 3010 with reuse
 - **Log capture** with 512KB ring buffers per server
 - **Auto-cleanup** of idle sessions after 60 seconds
-- **Process management** with stdout/stderr capture
 
 ## Installation & Usage
 
@@ -19,33 +26,15 @@ The recommended way to use dev-manager-mcp is via `npx`:
 
 ### Quick Start
 
+Make sure the daemon is running in a terminal somewhere:
+
 ```bash
-# STDIO mode (recommended for MCP clients)
-npx -y dev-manager-mcp stdio
-
-# Start daemon in foreground
-npx -y dev-manager-mcp daemon
-
-# Start daemon in background
-npx -y dev-manager-mcp daemon &
-
-# Custom port
-npx -y dev-manager-mcp daemon --port 3010
-# or via environment variable:
-PORT=3010 npx -y dev-manager-mcp daemon
+npx -y dev-manager-mcp
 ```
 
-**Note:** Use `-y` flag to skip npx prompts. First run downloads the binary (~5MB).
+Add this MCP config to your coding CLI:
 
-The daemon listens on `http://127.0.0.1:3009` by default.
-
-### Client Configuration
-
-#### STDIO Transport (Recommended)
-
-For Claude Desktop (`claude_desktop_config.json`):
-
-```json
+```bash
 {
   "mcpServers": {
     "dev-manager": {
@@ -56,50 +45,7 @@ For Claude Desktop (`claude_desktop_config.json`):
 }
 ```
 
-The STDIO proxy connects to the daemon at `http://127.0.0.1:3009/sse` by default. To use a different URL:
-
-```json
-{
-  "mcpServers": {
-    "dev-manager": {
-      "command": "npx",
-      "args": ["dev-manager-mcp", "stdio", "--daemon-url", "http://127.0.0.1:3010/sse"]
-    }
-  }
-}
-```
-
-Or use the environment variable:
-
-```json
-{
-  "mcpServers": {
-    "dev-manager": {
-      "command": "npx",
-      "args": ["dev-manager-mcp", "stdio"],
-      "env": {
-        "MCP_DAEMON_URL": "http://127.0.0.1:3009/sse"
-      }
-    }
-  }
-}
-```
-
-#### SSE Transport (Legacy)
-
-For Claude Desktop (`claude_desktop_config.json`):
-
-```json
-{
-  "mcpServers": {
-    "dev-manager": {
-      "url": "http://127.0.0.1:3009/sse"
-    }
-  }
-}
-```
-
-Multiple clients can use the same configuration and will share session state.
+Finally, ask your coding CLI to start a dev server. You should see it use the MCP server.
 
 ## MCP Tools
 
