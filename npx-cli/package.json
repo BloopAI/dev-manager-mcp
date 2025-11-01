@@ -1,0 +1,27 @@
+{
+  "name": "mcp-dev-manager",
+  "private": false,
+  "version": "0.1.0",
+  "main": "index.js",
+  "bin": {
+    "mcp-dev-manager": "bin/cli.js"
+  },
+  "keywords": [
+    "mcp",
+    "dev-server",
+    "daemon"
+  ],
+  "author": "",
+  "license": "MIT",
+  "description": "MCP Dev Server Manager - A daemon for managing development servers",
+  "dependencies": {
+    "adm-zip": "^0.5.16"
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "engines": {
+    "node": ">=18"
+  }
+}

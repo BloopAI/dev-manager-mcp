@@ -1,0 +1,304 @@
+name: Create GitHub Pre-Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: "Version bump type"
+        required: true
+        default: "patch"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - prerelease
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  NODE_VERSION: 22
+  RUST_TOOLCHAIN: stable
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    outputs:
+      new_tag: ${{ steps.version.outputs.new_tag }}
+      new_version: ${{ steps.version.outputs.new_version }}
+      branch_suffix: ${{ steps.branch.outputs.suffix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Cache cargo-edit
+        uses: actions/cache@v3
+        id: cache-cargo-edit
+        with:
+          path: ~/.cargo/bin/cargo-set-version
+          key: cargo-edit-${{ runner.os }}-${{ env.RUST_TOOLCHAIN }}
+
+      - name: Install cargo-edit
+        if: steps.cache-cargo-edit.outputs.cache-hit != 'true'
+        run: cargo install cargo-edit
+
+      - name: Generate branch suffix
+        id: branch
+        run: |
+          branch_name="${{ github.ref_name }}"
+          suffix=$(echo "$branch_name" | tail -c 7 | sed 's/[^a-zA-Z0-9]//g' | tr '[:upper:]' '[:lower:]')
+          echo "Branch: $branch_name"
+          echo "Suffix: $suffix"
+          echo "suffix=$suffix" >> $GITHUB_OUTPUT
+
+      - name: Determine and update versions
+        id: version
+        run: |
+          latest_npm_version=$(npm view mcp-dev-manager version 2>/dev/null || echo "0.0.0")
+          echo "Latest npm version: $latest_npm_version"
+
+          timestamp=$(date +%Y%m%d%H%M%S)
+
+          cd npx-cli
+          if [[ "${{ github.event.inputs.version_type }}" == "prerelease" ]]; then
+            npm version prerelease --preid="${{ steps.branch.outputs.suffix }}" --no-git-tag-version
+            new_version=$(node -p "require('./package.json').version")
+            new_tag="v${new_version}.${timestamp}"
+          else
+            npm version $latest_npm_version --no-git-tag-version --allow-same-version
+            npm version ${{ github.event.inputs.version_type }} --no-git-tag-version
+            new_version=$(node -p "require('./package.json').version")
+            new_tag="v${new_version}-${timestamp}"
+          fi
+          cd ..
+
+          cargo set-version "$new_version"
+
+          echo "New version: $new_version"
+          echo "new_version=$new_version" >> $GITHUB_OUTPUT
+          echo "new_tag=$new_tag" >> $GITHUB_OUTPUT
+
+      - name: Commit changes and create tag
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add npx-cli/package.json Cargo.toml
+          git commit -m "chore: bump version to ${{ steps.version.outputs.new_version }}"
+          git tag -a ${{ steps.version.outputs.new_tag }} -m "Release ${{ steps.version.outputs.new_tag }}"
+          git push
+          git push --tags
+
+  build-backend:
+    needs: bump-version
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            container: ghcr.io/rust-cross/cargo-zigbuild@sha256:af1bc2b869c5d76c1300f7a4685c2f1793d068e6e895c9f5c399b517b31a731e
+            name: linux-x64
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-latest
+            name: linux-arm64
+            container: ghcr.io/rust-cross/cargo-zigbuild@sha256:af1bc2b869c5d76c1300f7a4685c2f1793d068e6e895c9f5c399b517b31a731e
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            name: windows-x64
+          - target: x86_64-apple-darwin
+            os: macos-13
+            name: macos-x64
+          - target: aarch64-apple-darwin
+            os: macos-14
+            name: macos-arm64
+          - target: aarch64-pc-windows-msvc
+            os: windows-latest
+            name: windows-arm64
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.bump-version.outputs.new_tag }}
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          targets: ${{ matrix.target }}
+
+      - name: Install libclang (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y clang libclang-dev
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "."
+          prefix-key: "cache-v1.0"
+          key: ${{ matrix.target }}_${{ matrix.os }}
+          cache-on-failure: true
+          shared-key: "shared"
+          cache-all-crates: true
+
+      - name: Build backend (Linux)
+        if: runner.os == 'Linux'
+        run: cargo zigbuild --release --target ${{ matrix.target }}
+
+      - name: Build backend (non-Linux)
+        if: runner.os != 'Linux'
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Prepare binaries (non-macOS)
+        if: runner.os != 'macOS'
+        shell: bash
+        run: |
+          mkdir -p dist
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            cp target/${{ matrix.target }}/release/mcp-dev-manager.exe dist/mcp-dev-manager-${{ matrix.name }}.exe
+          else
+            cp target/${{ matrix.target }}/release/mcp-dev-manager dist/mcp-dev-manager-${{ matrix.name }}
+          fi
+
+      - name: Prepare Apple certificate (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          echo "${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}" | base64 --decode > certificate.p12
+
+      - name: Sign binary (macOS)
+        if: runner.os == 'macOS'
+        uses: indygreg/apple-code-sign-action@v1
+        with:
+          input_path: target/${{ matrix.target }}/release/mcp-dev-manager
+          output_path: mcp-dev-manager
+          p12_file: certificate.p12
+          p12_password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          sign: true
+          sign_args: "--code-signature-flags=runtime"
+
+      - name: Package binary (macOS)
+        if: runner.os == 'macOS'
+        run: zip mcp-dev-manager.zip mcp-dev-manager
+
+      - name: Prepare signed binaries (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p dist
+          cp mcp-dev-manager.zip dist/mcp-dev-manager-${{ matrix.name }}.zip
+
+      - name: Clean up certificates (macOS)
+        if: runner.os == 'macOS'
+        run: rm -f certificate.p12
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-binary-${{ matrix.name }}
+          path: dist/
+          retention-days: 1
+
+  package-npx-cli:
+    needs: [bump-version, build-backend]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-musl
+            name: linux-x64
+            binary: mcp-dev-manager
+          - target: x86_64-pc-windows-msvc
+            name: windows-x64
+            binary: mcp-dev-manager.exe
+          - target: x86_64-apple-darwin
+            name: macos-x64
+            binary: mcp-dev-manager
+          - target: aarch64-apple-darwin
+            name: macos-arm64
+            binary: mcp-dev-manager
+          - target: aarch64-pc-windows-msvc
+            name: windows-arm64
+            binary: mcp-dev-manager.exe
+          - target: aarch64-unknown-linux-musl
+            name: linux-arm64
+            binary: mcp-dev-manager
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.bump-version.outputs.new_tag }}
+
+      - name: Download backend binary artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-binary-${{ matrix.name }}
+          path: dist/
+
+      - name: Create platform package
+        if: matrix.name != 'macos-arm64' && matrix.name != 'macos-x64'
+        run: |
+          mkdir -p npx-cli/dist/${{ matrix.name }}
+          mkdir mcp-dev-manager-${{ matrix.name }}
+          
+          cp dist/mcp-dev-manager-${{ matrix.name }}* mcp-dev-manager-${{ matrix.name }}/${{ matrix.binary }}
+          
+          zip -j npx-cli/dist/${{ matrix.name }}/mcp-dev-manager.zip mcp-dev-manager-${{ matrix.name }}/${{ matrix.binary }}
+
+      - name: Create platform package (macOS)
+        if: matrix.name == 'macos-arm64' || matrix.name == 'macos-x64'
+        run: |
+          mkdir -p npx-cli/dist/${{ matrix.name }}
+          cp dist/mcp-dev-manager-${{ matrix.name }}* npx-cli/dist/${{ matrix.name }}/mcp-dev-manager.zip
+
+      - name: Upload platform package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: npx-platform-${{ matrix.name }}
+          path: npx-cli/dist/
+          retention-days: 1
+
+  create-prerelease:
+    needs: [bump-version, build-backend, package-npx-cli]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.bump-version.outputs.new_tag }}
+
+      - name: Download backend npx-cli zips
+        uses: actions/download-artifact@v4
+        with:
+          pattern: npx-platform-*
+          path: npx-cli/dist/
+          merge-multiple: true
+
+      - name: Setup Node for npm pack
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Pack
+        run: |
+          cd npx-cli
+          npm pack
+
+      - name: Create GitHub Pre-Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.bump-version.outputs.new_tag }}
+          name: Pre-release ${{ needs.bump-version.outputs.new_tag }}
+          prerelease: true
+          generate_release_notes: true
+          files: |
+            npx-cli/mcp-dev-manager-*.tgz
