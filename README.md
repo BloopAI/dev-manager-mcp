@@ -11,34 +11,33 @@ A daemon process that runs continuously and accepts multiple concurrent MCP clie
 - **Auto-cleanup** of idle sessions after 60 seconds
 - **Process management** with stdout/stderr capture
 
-## Building
+## Installation & Usage
+
+**Requirements:** Node.js >= 18
+
+The recommended way to use dev-manager-mcp is via `npx`:
+
+### Quick Start
 
 ```bash
-cargo build --release
-```
+# STDIO mode (recommended for MCP clients)
+npx -y dev-manager-mcp stdio
 
-The binary will be at `target/release/dev-manager-mcp`.
+# Start daemon in foreground
+npx -y dev-manager-mcp daemon
 
-## Running
-
-### Start the Daemon
-
-```bash
-# Foreground (default mode)
-./target/release/dev-manager-mcp
-# or explicitly:
-./target/release/dev-manager-mcp daemon
-
-# Background
-./target/release/dev-manager-mcp daemon &
+# Start daemon in background
+npx -y dev-manager-mcp daemon &
 
 # Custom port
-./target/release/dev-manager-mcp daemon --port 3010
+npx -y dev-manager-mcp daemon --port 3010
 # or via environment variable:
-PORT=3010 ./target/release/dev-manager-mcp daemon
+PORT=3010 npx -y dev-manager-mcp daemon
 ```
 
-The daemon will listen on `http://127.0.0.1:3009` by default.
+**Note:** Use `-y` flag to skip npx prompts. First run downloads the binary (~5MB).
+
+The daemon listens on `http://127.0.0.1:3009` by default.
 
 ### Client Configuration
 
@@ -50,8 +49,8 @@ For Claude Desktop (`claude_desktop_config.json`):
 {
   "mcpServers": {
     "dev-manager": {
-      "command": "dev-manager-mcp",
-      "args": ["stdio"]
+      "command": "npx",
+      "args": ["dev-manager-mcp", "stdio"]
     }
   }
 }
@@ -63,8 +62,8 @@ The STDIO proxy connects to the daemon at `http://127.0.0.1:3009/sse` by default
 {
   "mcpServers": {
     "dev-manager": {
-      "command": "dev-manager-mcp",
-      "args": ["stdio", "--daemon-url", "http://127.0.0.1:3010/sse"]
+      "command": "npx",
+      "args": ["dev-manager-mcp", "stdio", "--daemon-url", "http://127.0.0.1:3010/sse"]
     }
   }
 }
@@ -76,8 +75,8 @@ Or use the environment variable:
 {
   "mcpServers": {
     "dev-manager": {
-      "command": "dev-manager-mcp",
-      "args": ["stdio"],
+      "command": "npx",
+      "args": ["dev-manager-mcp", "stdio"],
       "env": {
         "MCP_DAEMON_URL": "http://127.0.0.1:3009/sse"
       }
@@ -207,11 +206,23 @@ Get stdout/stderr logs for a development server session.
 
 ## Testing Multi-Client Behavior
 
-1. Start daemon: `./target/release/dev-manager-mcp`
+1. Start daemon: `npx -y dev-manager-mcp daemon`
 2. Connect Client A and start a server session
 3. Connect Client B and query status - should see Client A's session
 4. Client B can stop Client A's session
 5. All clients share the same session state
+
+## Building from Source
+
+If you prefer to build from source or need offline/advanced usage:
+
+```bash
+cargo build --release
+```
+
+The binary will be at `target/release/dev-manager-mcp`.
+
+To use the built binary, replace `npx dev-manager-mcp` with `./target/release/dev-manager-mcp` in all examples above.
 
 ## License
 
