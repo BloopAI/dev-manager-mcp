@@ -14,6 +14,8 @@ enum Command {
     Daemon {
         #[arg(long, env = "PORT", default_value_t = 3009)]
         port: u16,
+        #[arg(long, env = "MCP_IDLE_TIMEOUT", default_value_t = 120)]
+        idle_timeout: u64,
     },
     #[command(about = "Run as STDIO proxy that connects to daemon")]
     Stdio {
@@ -30,8 +32,8 @@ enum Command {
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
-    match cli.command.unwrap_or(Command::Daemon { port: 3009 }) {
-        Command::Daemon { port } => dev_manager_mcp::run_daemon(port).await,
+    match cli.command.unwrap_or(Command::Daemon { port: 3009, idle_timeout: 120 }) {
+        Command::Daemon { port, idle_timeout } => dev_manager_mcp::run_daemon(port, idle_timeout).await,
         Command::Stdio { daemon_url } => dev_manager_mcp::run_stdio_proxy(&daemon_url).await,
     }
 }

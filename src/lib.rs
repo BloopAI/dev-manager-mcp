@@ -16,6 +16,7 @@ use serde_json::Value;
 use service::DevManagerService;
 use std::net::{Ipv4Addr, SocketAddr};
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::sync::mpsc;
 
 fn inject_cwd_if_start_tool(
@@ -48,8 +49,8 @@ fn inject_cwd_if_start_tool(
     msg
 }
 
-pub async fn run_daemon(port: u16) -> Result<()> {
-    let manager = Arc::new(Manager::new());
+pub async fn run_daemon(port: u16, idle_timeout_secs: u64) -> Result<()> {
+    let manager = Arc::new(Manager::new(Duration::from_secs(idle_timeout_secs)));
     let bind = SocketAddr::from((Ipv4Addr::LOCALHOST, port));
 
     println!("MCP daemon listening on {}", bind);

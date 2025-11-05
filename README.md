@@ -1,6 +1,6 @@
 # MCP Dev Server Manager
 
-A daemon that accepts requests from MCP clients to start dev servers, allocating unique ports to avoid collisions and shutting down idle connections after 60s of inactivity.
+A daemon that accepts requests from MCP clients to start dev servers, allocating unique ports to avoid collisions and shutting down idle connections after 120s of inactivity.
 
 ## Example
 
@@ -16,7 +16,7 @@ A daemon that accepts requests from MCP clients to start dev servers, allocating
 - **Avoid port collisions**: when working with websites, it's often necessary to specify different ports if you want to run multiple dev servers
 - **Automatic port allocation** starting at 3010 with reuse
 - **Log capture** with 512KB ring buffers per server
-- **Auto-cleanup** of idle sessions after 60 seconds
+- **Auto-cleanup** of idle sessions after 120 seconds (configurable via `--idle-timeout`)
 
 ## Installation & Usage
 
@@ -129,7 +129,7 @@ Get stdout/stderr logs for a development server session.
 - Single `Arc<Manager>` shared across all client connections
 - Each connection gets a fresh `DevManagerService` instance
 - Mutex-protected HashMap for session storage
-- Background sweeper runs every 5 seconds to clean up idle sessions (>60s)
+- Background sweeper runs every 5 seconds to clean up idle sessions (>120s by default)
 
 ### Session Keys
 

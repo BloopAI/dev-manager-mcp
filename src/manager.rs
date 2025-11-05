@@ -10,7 +10,6 @@ use tokio::process::Command;
 type SessionKey = String;
 
 const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-const RUNNING_IDLE_SECS: u64 = 60;
 const EXITED_RETENTION_SECS: u64 = 600;
 
 fn generate_session_key() -> String {
@@ -31,7 +30,7 @@ pub struct Manager {
 }
 
 impl Manager {
-    pub fn new() -> Self {
+    pub fn new(idle_timeout: Duration) -> Self {
         let manager = Self {
             inner: Arc::new(Mutex::new(ManagerInner {
                 servers: HashMap::new(),
@@ -39,11 +38,11 @@ impl Manager {
             })),
         };
 
-        manager.start_sweeper();
+        manager.start_sweeper(idle_timeout);
         manager
     }
 
-    fn start_sweeper(&self) {
+    fn start_sweeper(&self, idle_timeout: Duration) {
         let inner = self.inner.clone();
         tokio::spawn(async move {
             let mut interval = tokio::time::interval(Duration::from_secs(5));
@@ -57,7 +56,7 @@ impl Manager {
                     };
 
                     let now = Instant::now();
-                    let idle_threshold = Duration::from_secs(RUNNING_IDLE_SECS);
+                    let idle_threshold = idle_timeout;
                     let retention_threshold = Duration::from_secs(EXITED_RETENTION_SECS);
 
                     let mut to_stop = Vec::new();
