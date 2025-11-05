@@ -101,8 +101,6 @@ function extractAndRun() {
     } catch { }
   }
 
-  console.log(`🚀 Launching dev-manager-mcp...`);
-  
   const args = process.argv.slice(2);
   const proc = spawn(binPath, args, { stdio: "inherit" });
   
