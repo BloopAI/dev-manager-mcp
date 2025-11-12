@@ -47,6 +47,211 @@ Add this MCP config to your coding CLI:
 
 Finally, ask your coding CLI to start a dev server. You should see it use the MCP server.
 
+### Agent-Specific Installation
+
+**Standard config** works in most tools:
+
+```json
+{
+  "mcpServers": {
+    "dev-manager": {
+      "command": "npx",
+      "args": ["dev-manager-mcp", "stdio"]
+    }
+  }
+}
+```
+
+<details>
+<summary>Amp</summary>
+
+Add via the Amp VS Code extension settings screen or by updating your settings.json file:
+
+```json
+"amp.mcpServers": {
+  "dev-manager": {
+    "command": "npx",
+    "args": ["dev-manager-mcp", "stdio"]
+  }
+}
+```
+
+**Amp CLI Setup:**
+
+Add via the `amp mcp add` command below
+
+```bash
+amp mcp add dev-manager -- npx dev-manager-mcp stdio
+```
+
+</details>
+
+<details>
+<summary>Claude Code</summary>
+
+Use the Claude Code CLI to add the dev-manager MCP server:
+
+```bash
+claude mcp add dev-manager npx dev-manager-mcp stdio
+```
+</details>
+
+<details>
+<summary>Claude Desktop</summary>
+
+Follow the MCP install [guide](https://modelcontextprotocol.io/quickstart/user), use the standard config above.
+
+</details>
+
+<details>
+<summary>Codex</summary>
+
+Use the Codex CLI to add the dev-manager MCP server:
+
+```bash
+codex mcp add dev-manager npx "dev-manager-mcp" "stdio"
+```
+
+Alternatively, create or edit the configuration file `~/.codex/config.toml` and add:
+
+```toml
+[mcp_servers.dev-manager]
+command = "npx"
+args = ["dev-manager-mcp", "stdio"]
+```
+
+For more information, see the [Codex MCP documentation](https://github.com/openai/codex/blob/main/codex-rs/config.md#mcp_servers).
+
+</details>
+
+<details>
+<summary>Cursor</summary>
+
+Go to `Cursor Settings` -> `MCP` -> `Add new MCP Server`. Name to your liking, use `command` type with the command `npx dev-manager-mcp stdio`. You can also verify config or add command arguments via clicking `Edit`.
+
+</details>
+
+<details>
+<summary>Factory</summary>
+
+Use the Factory CLI to add the dev-manager MCP server:
+
+```bash
+droid mcp add dev-manager "npx dev-manager-mcp stdio"
+```
+
+Alternatively, type `/mcp` within Factory droid to open an interactive UI for managing MCP servers.
+
+For more information, see the [Factory MCP documentation](https://docs.factory.ai/cli/configuration/mcp).
+
+</details>
+
+<details>
+<summary>Gemini CLI</summary>
+
+Follow the MCP install [guide](https://github.com/google-gemini/gemini-cli/blob/main/docs/tools/mcp-server.md#configure-the-mcp-server-in-settingsjson), use the standard config above.
+
+</details>
+
+<details>
+<summary>Goose</summary>
+
+Go to `Advanced settings` -> `Extensions` -> `Add custom extension`. Name to your liking, use type `STDIO`, and set the `command` to `npx dev-manager-mcp stdio`. Click "Add Extension".
+</details>
+
+<details>
+<summary>Kiro</summary>
+
+Follow the MCP Servers [documentation](https://kiro.dev/docs/mcp/). For example in `.kiro/settings/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "dev-manager": {
+      "command": "npx",
+      "args": ["dev-manager-mcp", "stdio"]
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary>LM Studio</summary>
+
+Go to `Program` in the right sidebar -> `Install` -> `Edit mcp.json`. Use the standard config above.
+</details>
+
+<details>
+<summary>opencode</summary>
+
+Follow the MCP Servers [documentation](https://opencode.ai/docs/mcp-servers/). For example in `~/.config/opencode/opencode.json`:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "dev-manager": {
+      "type": "local",
+      "command": [
+        "npx",
+        "dev-manager-mcp",
+        "stdio"
+      ],
+      "enabled": true
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary>Qodo Gen</summary>
+
+Open [Qodo Gen](https://docs.qodo.ai/qodo-documentation/qodo-gen) chat panel in VSCode or IntelliJ → Connect more tools → + Add new MCP → Paste the standard config above.
+
+Click <code>Save</code>.
+</details>
+
+<details>
+<summary>VS Code</summary>
+
+Follow the MCP install [guide](https://code.visualstudio.com/docs/copilot/chat/mcp-servers#_add-an-mcp-server), use the standard config above. You can also install the dev-manager MCP server using the VS Code CLI:
+
+```bash
+# For VS Code
+code --add-mcp '{"name":"dev-manager","command":"npx","args":["dev-manager-mcp","stdio"]}'
+```
+
+After installation, the dev-manager MCP server will be available for use with your GitHub Copilot agent in VS Code.
+</details>
+
+<details>
+<summary>Warp</summary>
+
+Go to `Settings` -> `AI` -> `Manage MCP Servers` -> `+ Add` to [add an MCP Server](https://docs.warp.dev/knowledge-and-collaboration/mcp#adding-an-mcp-server). Use the standard config above.
+
+Alternatively, use the slash command `/add-mcp` in the Warp prompt and paste the standard config from above:
+```json
+{
+  "mcpServers": {
+    "dev-manager": {
+      "command": "npx",
+      "args": ["dev-manager-mcp", "stdio"]
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary>Windsurf</summary>
+
+Follow Windsurf MCP [documentation](https://docs.windsurf.com/windsurf/cascade/mcp). Use the standard config above.
+
+</details>
+
 ## MCP Tools
 
 ### `start`
